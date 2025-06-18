@@ -1,0 +1,60 @@
+from datetime import datetime
+from matplotlib import pyplot as plt
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import confusion_matrix, accuracy_score
+
+class TrafficClassifier:
+    def __init__(self):
+        print("Loading traffic dataset...")
+        self.dataset = pd.read_csv('traffic_dataset.csv')
+        self.dataset.iloc[:, 2] = self.dataset.iloc[:, 2].str.replace('.', '')
+        self.dataset.iloc[:, 3] = self.dataset.iloc[:, 3].str.replace('.', '')
+        self.dataset.iloc[:, 5] = self.dataset.iloc[:, 5].str.replace('.', '')
+
+    def train_and_evaluate(self):
+        print("Training the Decision Tree classifier...")
+
+        X = self.dataset.iloc[:, :-1].astype('float64').values
+        y = self.dataset.iloc[:, -1].values
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=0)
+
+        model = DecisionTreeClassifier(criterion='entropy', random_state=0)
+        model.fit(X_train, y_train)
+        predictions = model.predict(X_test)
+
+        cm = confusion_matrix(y_test, predictions)
+        accuracy = accuracy_score(y_test, predictions)
+        error_rate = 1.0 - accuracy
+
+        print("-" * 78)
+        print("Confusion Matrix:")
+        print(cm)
+        print(f"Success Accuracy: {accuracy * 100:.2f}%")
+        print(f"Failure Rate: {error_rate * 100:.2f}%")
+        print("-" * 78)
+
+        labels = ['True Positive', 'False Positive', 'False Negative', 'True Negative']
+        values = [cm[0][0], cm[0][1], cm[1][0], cm[1][1]]
+
+        plt.figure(figsize=(6, 4))
+        plt.title("Decision Tree Classification Results")
+        plt.xlabel("Prediction Category")
+        plt.ylabel("Number of Flows")
+        plt.bar(labels, values, color="#e0d692", label='Decision Tree')
+        plt.legend()
+        plt.tight_layout()
+        plt.style.use("seaborn-darkgrid")
+        plt.show()
+
+def main():
+    start_time = datetime.now()
+    classifier = TrafficClassifier()
+    classifier.train_and_evaluate()
+    end_time = datetime.now()
+    print("Total Training Time:", end_time - start_time)
+
+if __name__ == "__main__":
+    main()

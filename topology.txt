@@ -1,0 +1,41 @@
+from mininet.topo import Topo
+from mininet.net import Mininet
+from mininet.link import TCLink
+from mininet.log import setLogLevel
+from mininet.cli import CLI
+from mininet.node import OVSKernelSwitch, RemoteController
+
+class CustomTopology(Topo):
+    def build(self):
+        switches = {}
+        for i in range(1, 7):
+            switches[f's{i}'] = self.addSwitch(
+                f's{i}', cls=OVSKernelSwitch, protocols='OpenFlow13'
+            )
+
+        for i in range(6):
+            switch = switches[f's{i+1}']
+            for j in range(3):
+                host_id = i * 3 + j + 1
+                host = self.addHost(
+                    f'h{host_id}',
+                    cpu=1.0 / 20,
+                    mac=f"00:00:00:00:00:{host_id:02d}",
+                    ip=f"10.0.0.{host_id}/24"
+                )
+                self.addLink(host, switch)
+
+        for i in range(1, 6):
+            self.addLink(switches[f's{i}'], switches[f's{i+1}'])
+
+def startNetwork():
+    topo = CustomTopology()
+    controller = RemoteController('c0', ip='{controller_vm_ip}', port=6653)
+    net = Mininet(topo=topo, link=TCLink, controller=controller)
+    net.start()
+    CLI(net)
+    net.stop()
+
+if __name__ == '__main__':
+    setLogLevel('info')
+    startNetwork()
